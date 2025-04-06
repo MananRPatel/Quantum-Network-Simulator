@@ -99,6 +99,13 @@ class Topology:
                 neighbors = sorted(graph.neighbors(node))
                 f.write(f"{node}: {neighbors}\n")
             
+            # Write node positions
+            f.write("\nNode Positions:\n")
+            for node in sorted(graph.nodes()):
+                if 'pos' in graph.nodes[node]:
+                    pos = graph.nodes[node]['pos']
+                    f.write(f"{node}: [{pos[0]:.1f}, {pos[1]:.1f}]\n")
+            
             # Write additional information
             f.write(f"\nTotal Nodes: {graph.number_of_nodes()}\n")
             f.write(f"Total Edges: {graph.number_of_edges()}\n")
