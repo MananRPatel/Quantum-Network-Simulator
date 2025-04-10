@@ -2,7 +2,6 @@ from dataclasses import dataclass
 from typing import List, Optional, Type, Protocol
 import numpy as np
 import matplotlib.pyplot as plt
-from itertools import product
 from ext_plotting import plot_EXT_vs_h
 from simulators import QCASTSimulator, QPASSSimulator
 
@@ -162,12 +161,14 @@ if __name__ == "__main__":
     
     # Run simulations for both random and JSON topologies
     random_results = run_simulations(SIMULATION_TYPES, config)
-    json_results = run_simulations(SIMULATION_TYPES, config, json_file="test_topology.json")
     
     # Plot results
     print("\n=== Plotting Results for Random Topology ===")
     plot_combined_comparison(random_results)
     
     # Uncomment to plot JSON topology results
+    # json_results = run_simulations(SIMULATION_TYPES, config, json_file="test_topology.json")
+    
+    # Plot results
     # print("\n=== Plotting Results for JSON Topology ===")
     # plot_combined_comparison(json_results)
