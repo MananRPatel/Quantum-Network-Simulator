@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from ext_plotting import plot_EXT_vs_h
 from simulators import QCASTSimulator, QPASSSimulator
+import json
 
 class Simulator(Protocol):
     """Protocol defining the interface for all simulators"""
@@ -123,6 +124,44 @@ def run_simulations(
     
     return results
 
+def save_plot_data_to_json(data: dict[str, List[float]], filename: str = "plot_data.json") -> None:
+    """Save plot data to a JSON file"""
+    plot_data = {}
+    for label, values in data.items():
+        sorted_data = np.sort(values)
+        cdf = np.arange(1, len(sorted_data) + 1) / len(sorted_data)
+        plot_data[label] = {
+            "x": sorted_data.tolist(),
+            "y": cdf.tolist()
+        }
+    
+    with open(filename, 'w') as f:
+        json.dump(plot_data, f, indent=4)
+    print(f"Plot data saved to {filename}")
+
+def load_plot_data_from_json(filename: str = "plot_data.json") -> dict[str, dict]:
+    """Load plot data from a JSON file"""
+    with open(filename, 'r') as f:
+        plot_data = json.load(f)
+    return plot_data
+
+def plot_from_json(filename: str = "plot_data.json", linewidth: int = 2) -> None:
+    """Plot CDF comparison from JSON data"""
+    plot_data = load_plot_data_from_json(filename)
+    
+    plt.figure(figsize=(10, 6))
+    
+    # Plot each dataset
+    for label, data in plot_data.items():
+        plt.plot(data["x"], data["y"], linewidth=linewidth, label=label)
+    
+    plt.title("Aggregated CDF of Throughput (ebits per slot) over 10 Networks")
+    plt.xlabel("Throughput (ebits per slot)")
+    plt.ylabel("CDF")
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
 # Define available simulation types
 SIMULATION_TYPES = [
     SimulationType(
@@ -162,13 +201,14 @@ if __name__ == "__main__":
     # Run simulations for both random and JSON topologies
     random_results = run_simulations(SIMULATION_TYPES, config)
     
-    # Plot results
-    print("\n=== Plotting Results for Random Topology ===")
-    plot_combined_comparison(random_results)
+    # Save plot data to JSON
+    save_plot_data_to_json(random_results, "random_topology_plot.json")
+    
+    # Plot results from JSON
+    print("\n=== Plotting Results for Random Topology from JSON ===")
+    plot_from_json("random_topology_plot.json")
     
     # Uncomment to plot JSON topology results
     # json_results = run_simulations(SIMULATION_TYPES, config, json_file="test_topology.json")
-    
-    # Plot results
-    # print("\n=== Plotting Results for JSON Topology ===")
-    # plot_combined_comparison(json_results)
+    # save_plot_data_to_json(json_results, "json_topology_plot.json")
+    # plot_from_json("json_topology_plot.json")
