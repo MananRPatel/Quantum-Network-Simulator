@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from ext_plotting import plot_EXT_vs_h
 from simulators import QCASTSimulator, QPASSSimulator
 import json
+from config import SimulationConfig, SimulationType, SimulationFactory, SIMULATION_TYPES, DEFAULT_CONFIG, JSON_CONFIG
 
 class Simulator(Protocol):
     """Protocol defining the interface for all simulators"""
@@ -23,6 +24,7 @@ class SimulationConfig:
     num_requests: int = 10
     num_slots: int = 30
     num_topologies: int = 5
+    use_json_topology: bool = False
 
     def to_dict(self) -> dict:
         """Convert config to dictionary for compatibility"""
@@ -34,7 +36,8 @@ class SimulationConfig:
             "average_degree": self.average_degree,
             "num_requests": self.num_requests,
             "num_slots": self.num_slots,
-            "num_topologies": self.num_topologies
+            "num_topologies": self.num_topologies,
+            "use_json_topology": self.use_json_topology
         }
 
 @dataclass
@@ -51,7 +54,7 @@ class SimulationFactory:
         self.config = config
         self.params = config.to_dict()
 
-    def create_simulator(self, sim_type: SimulationType, json_file: Optional[str] = None) -> Simulator:
+    def create_simulator(self, sim_type: SimulationType) -> Simulator:
         """Create a simulator instance with the given configuration"""
         sim_args = {
             "num_nodes": self.params["num_nodes"],
@@ -64,22 +67,18 @@ class SimulationFactory:
             "q": self.params["q"]
         }
         
-        if json_file:
-            sim_args["json_file"] = json_file
-            
         return sim_type.simulator_class(**sim_args)
 
 def run_simulation_for_topologies(
     sim_type: SimulationType,
-    factory: SimulationFactory,
-    json_file: Optional[str] = None
+    factory: SimulationFactory
 ) -> List[float]:
     """Run simulation across multiple topologies"""
     all_throughputs = []
     
     for topo in range(factory.config.num_topologies):
         print(f"\n====== Running {sim_type.display_name} on network topology {topo+1} ======")
-        simulator = factory.create_simulator(sim_type, json_file)
+        simulator = factory.create_simulator(sim_type)
         throughput = simulator.simulate()
         all_throughputs.extend(throughput)
         
@@ -108,18 +107,17 @@ def plot_combined_comparison(results: dict[str, List[float]]) -> None:
 
 def run_simulations(
     sim_types: List[SimulationType],
-    config: SimulationConfig,
-    json_file: Optional[str] = None
+    config: SimulationConfig
 ) -> dict[str, List[float]]:
     """Run all simulations with given configuration"""
-    print(f"\n=== Running {'JSON' if json_file else 'Random'} Topology Simulation ===")
+    print(f"\n=== Running {'JSON' if config.use_json_topology else 'Random'} Topology Simulation ===")
     
     factory = SimulationFactory(config)
     results = {}
     
     for sim_type in sim_types:
         results[sim_type.display_name] = run_simulation_for_topologies(
-            sim_type, factory, json_file
+            sim_type, factory
         )
     
     return results
@@ -162,53 +160,17 @@ def plot_from_json(filename: str = "plot_data.json", linewidth: int = 2) -> None
     plt.grid(True)
     plt.show()
 
-# Define available simulation types
-SIMULATION_TYPES = [
-    SimulationType(
-        name="QCAST",
-        simulator_class=QCASTSimulator,
-        routing_metric="EXT",
-        display_name="Q-CAST (EXT)"
-    ),
-    SimulationType(
-        name="QPASS_CR",
-        simulator_class=QPASSSimulator,
-        routing_metric="CR",
-        display_name="Q-PASS (CR)"
-    ),
-    SimulationType(
-        name="QPASS_SumDist",
-        simulator_class=QPASSSimulator,
-        routing_metric="SumDist",
-        display_name="Q-PASS (SumDist)"
-    ),
-    SimulationType(
-        name="QPASS_BotCap",
-        simulator_class=QPASSSimulator,
-        routing_metric="BotCap",
-        display_name="Q-PASS (BotCap)"
-    )
-]
-
 if __name__ == "__main__":
     # Plot EXT vs Hop Count
     print("\n=== Plotting EXT vs. Hop Count Graphs ===")
     plot_EXT_vs_h(p_values=[0.9, 0.6], q=0.9, widths=[1, 2, 3], h_range=range(1, 11))
     
-    # Initialize configuration
-    config = SimulationConfig()
-    
-    # Run simulations for both random and JSON topologies
-    random_results = run_simulations(SIMULATION_TYPES, config)
-    
-    # Save plot data to JSON
+    # Run simulations with random topology
+    random_results = run_simulations(SIMULATION_TYPES, DEFAULT_CONFIG)
     save_plot_data_to_json(random_results, "random_topology_plot.json")
-    
-    # Plot results from JSON
-    print("\n=== Plotting Results for Random Topology from JSON ===")
     plot_from_json("random_topology_plot.json")
     
-    # Uncomment to plot JSON topology results
-    # json_results = run_simulations(SIMULATION_TYPES, config, json_file="test_topology.json")
-    # save_plot_data_to_json(json_results, "json_topology_plot.json")
-    # plot_from_json("json_topology_plot.json")
+    # Run simulations with JSON topology
+    json_results = run_simulations(SIMULATION_TYPES, JSON_CONFIG)
+    save_plot_data_to_json(json_results, "json_topology_plot.json")
+    plot_from_json("json_topology_plot.json")
