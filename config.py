@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import List, Optional, Type, Protocol
-from simulators import QCASTSimulator, QPASSSimulator
+from simulators import QCASTSimulator, QPASSSimulator, QCASTEnhancedSimulator
 
 class Simulator(Protocol):
     """Protocol defining the interface for all simulators"""
@@ -11,14 +11,14 @@ class Simulator(Protocol):
 @dataclass
 class SimulationConfig:
     """Configuration for simulation parameters"""
-    num_nodes: int = 50
+    num_nodes: int = 100
     target_Ep: float = 0.6
     q: float = 0.9
-    link_state_range: int = 5
-    average_degree: int = 5
+    link_state_range: int = 3
+    average_degree: int = 6
     num_requests: int = 10
-    num_slots: int = 30
-    num_topologies: int = 5
+    num_slots: int = 50
+    num_topologies: int = 10
     use_json_topology: bool = False  # Whether to use JSON topology
     json_file: Optional[str] = None  # Path to JSON topology file
 
@@ -76,6 +76,12 @@ SIMULATION_TYPES = [
         simulator_class=QCASTSimulator,
         routing_metric="EXT",
         display_name="Q-CAST (EXT)"
+    ),
+    SimulationType(
+        name="QCAST_ENHANCED",
+        simulator_class=QCASTEnhancedSimulator,
+        routing_metric="EXT",
+        display_name="Q-CAST (Enhanced)"
     ),
     SimulationType(
         name="QPASS_CR",

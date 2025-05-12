@@ -16,14 +16,14 @@ class Simulator(Protocol):
 @dataclass
 class SimulationConfig:
     """Configuration for simulation parameters"""
-    num_nodes: int = 50
+    num_nodes: int = 100
     target_Ep: float = 0.6
     q: float = 0.9
-    link_state_range: int = 5
-    average_degree: int = 5
+    link_state_range: int = 3
+    average_degree: int = 6
     num_requests: int = 10
-    num_slots: int = 30
-    num_topologies: int = 5
+    num_slots: int = 50
+    num_topologies: int = 3
     use_json_topology: bool = False
 
     def to_dict(self) -> dict:
