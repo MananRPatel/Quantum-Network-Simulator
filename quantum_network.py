@@ -6,6 +6,7 @@ from math import comb, sqrt, inf
 from networkx.algorithms.simple_paths import shortest_simple_paths
 from waxman_graph import generate_waxman_graph
 from topology import Topology
+from typing import List
 
 class QuantumNetwork:
     def __init__(self, num_nodes=100, num_slots=1000, num_requests=10, link_state_range=3,
@@ -596,4 +597,19 @@ class QuantumNetwork:
             path = nx.shortest_path(self.graph, source=s, target=d, weight='botcap')
             return path
         except nx.NetworkXNoPath:
-            return None 
+            return None
+
+    def calculate_path_reliability(self, path: List[int]) -> float:
+        """Calculate the reliability of a path as the product of link reliabilities"""
+        reliability = 1.0
+        for i in range(len(path) - 1):
+            u, v = path[i], path[i+1]
+            # Get the link reliability from the graph edge attributes
+            if self.graph.has_edge(u, v):
+                reliability *= self.graph[u][v]['success_prob']
+            elif self.graph.has_edge(v, u):
+                reliability *= self.graph[v][u]['success_prob']
+            else:
+                # If link doesn't exist, return 0 reliability
+                return 0.0
+        return reliability 

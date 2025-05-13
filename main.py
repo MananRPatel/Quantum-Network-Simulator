@@ -16,16 +16,6 @@ class Simulator(Protocol):
 @dataclass
 class SimulationConfig:
     """Configuration for simulation parameters"""
-    num_nodes: int = 100
-    target_Ep: float = 0.6
-    q: float = 0.9
-    link_state_range: int = 3
-    average_degree: int = 6
-    num_requests: int = 10
-    num_slots: int = 50
-    num_topologies: int = 3
-    use_json_topology: bool = False
-
     def to_dict(self) -> dict:
         """Convert config to dictionary for compatibility"""
         return {
@@ -165,12 +155,37 @@ if __name__ == "__main__":
     print("\n=== Plotting EXT vs. Hop Count Graphs ===")
     plot_EXT_vs_h(p_values=[0.9, 0.6], q=0.9, widths=[1, 2, 3], h_range=range(1, 11))
     
-    # Run simulations with random topology
-    random_results = run_simulations(SIMULATION_TYPES, DEFAULT_CONFIG)
-    save_plot_data_to_json(random_results, "random_topology_plot.json")
-    plot_from_json("random_topology_plot.json")
+    # Run simulations with random topology and collect metrics
+    print("\n=== Running Time-based Metrics Analysis ===")
+    time_metrics = {}
+    for sim_type in SIMULATION_TYPES:
+        print(f"\nRunning {sim_type.display_name} simulation...")
+        simulator = SimulationFactory(DEFAULT_CONFIG).create_simulator(sim_type)
+        time_metrics[sim_type.display_name] = simulator.simulate()
     
-    # Run simulations with JSON topology
-    json_results = run_simulations(SIMULATION_TYPES, JSON_CONFIG)
-    save_plot_data_to_json(json_results, "json_topology_plot.json")
-    plot_from_json("json_topology_plot.json")
+    # Plot time-based metrics
+    from metrics_plotting import plot_time_based_metrics
+    plot_time_based_metrics(time_metrics, "time_based_metrics.png")
+    
+    # Save and plot CDF of throughput
+    save_plot_data_to_json(time_metrics, "new.json")
+    plot_from_json("new.json")
+    
+    # # Run scalability tests for QCAST-Enhanced
+    # print("\n=== Running Scalability Analysis for QCAST-Enhanced ===")
+    # node_counts = [50, 100, 150, 200, 250, 300]
+    # enhanced_simulator = SimulationFactory(DEFAULT_CONFIG).create_simulator(
+    #     next(sim for sim in SIMULATION_TYPES if sim.name == "QCAST-Enhanced")
+    # )
+    # scalability_metrics = enhanced_simulator.run_scalability_test(node_counts)
+    
+    # # Save and plot scalability metrics
+    # save_plot_data_to_json(scalability_metrics, "scalability_metrics.json")
+    # plot_from_json("scalability_metrics.json")
+    
+    print("\n=== Analysis Complete ===")
+    print("Time-based metrics plots saved to time_based_metrics.png")
+    print("Time-based metrics data saved to time_metrics.json")
+    print("CDF plot of throughput displayed")
+    print("Scalability metrics saved to scalability_metrics.json")
+    print("Scalability metrics plot displayed")

@@ -2,45 +2,110 @@ import random
 from quantum_network import QuantumNetwork
 from path_selection import PathSelection
 from recovery_strategies import RecoveryStrategies
+from typing import List, Dict
+import numpy as np
 
 class QPASSSimulator(QuantumNetwork):
     def attempt_entanglement_with_recovery(self, path, s, d):
         return RecoveryStrategies.segmentation_based_recovery(self, path, s, d)
 
     def simulate(self):
-        print("\n--- Running Q-PASS Simulation (with segmentation-based recovery) ---")
+        print("\n" + "="*80)
+        print("Q-PASS SIMULATION INITIATED")
+        print("="*80)
+        print("Configuration:")
+        print(f"  • Number of Nodes: {self.num_nodes}")
+        print(f"  • Number of Time Slots: {self.num_slots}")
+        print(f"  • Number of Requests per Slot: {self.num_requests}")
+        print(f"  • Link State Range: {self.link_state_range}")
+        print(f"  • Average Node Degree: {self.average_degree}")
+        print(f"  • Target Entanglement Probability: {self.target_Ep}")
+        print(f"  • Quantum Channel Quality (q): {self.q}")
+        print("="*80)
+
         slot_throughput = []
+        success_rates = []
+        path_reliabilities = []
+        recovery_success = []
         self.deferred_requests = []
+        
         for slot in range(self.num_slots):
-            print(f"\n=== Time Slot {slot} (Q-PASS) ===")
+            print(f"\n[Time Slot {slot}] Q-PASS Protocol Execution")
+            print("-"*50)
             self.reset_resources_for_new_slot()
             sd_pairs = self.generate_sd_pairs()
             current_sd = sd_pairs + self.deferred_requests
-            print(f"Current S-D pairs: {current_sd}")
+            print(f"Active Source-Destination Pairs: {len(current_sd)}")
+            print(f"  • New Requests: {len(sd_pairs)}")
+            print(f"  • Deferred Requests: {len(self.deferred_requests)}")
+            
             selected_paths = PathSelection.qpass_path_selection(self, current_sd, self.routing_metric)
-            print("---- Resource Reservation Completed ----")
-            for sd, path in selected_paths.items():
-                print(f"S-D pair {sd}: Selected path: {path}")
+            print("\nPath Selection Results:")
+            print(f"  • Total Paths Selected: {len(selected_paths)}")
+            
             successful_entanglements = 0
+            recovery_attempts = 0
+            recovery_successes = 0
+            total_path_reliability = 0
             served_sd = set()
-            print("---- Entanglement Phase (P4) ----")
+            
+            print("\nEntanglement Phase:")
             for sd, path in selected_paths.items():
                 s, d = sd
+                path_reliability = self.calculate_path_reliability(path)
+                total_path_reliability += path_reliability
+                
+                print(f"\nProcessing S-D pair {sd}:")
+                print(f"  • Selected Path: {path}")
+                print(f"  • Path Reliability: {path_reliability:.4f}")
+                
                 if self.attempt_entanglement(path):
-                    print(f"Direct entanglement succeeded for {sd}.")
+                    print(f"  ✓ Direct Entanglement Successful")
                     successful_entanglements += 1
                     served_sd.add(sd)
                 else:
+                    recovery_attempts += 1
+                    print(f"  × Direct Entanglement Failed")
                     if self.attempt_entanglement_with_recovery(path, s, d):
-                        print(f"Segmentation-based recovery succeeded for {sd}.")
+                        print(f"  ✓ Recovery Successful")
                         successful_entanglements += 1
+                        recovery_successes += 1
                         served_sd.add(sd)
                     else:
-                        print(f"{sd} failed.")
+                        print(f"  × Recovery Failed")
+            
             slot_throughput.append(successful_entanglements)
-            print(f"Time Slot {slot} throughput: {successful_entanglements}")
+            success_rate = len(served_sd) / len(current_sd) * 100
+            success_rates.append(success_rate)
+            avg_reliability = total_path_reliability / len(selected_paths) if selected_paths else 0
+            path_reliabilities.append(avg_reliability)
+            recovery_rate = recovery_successes / recovery_attempts * 100 if recovery_attempts > 0 else 0
+            recovery_success.append(recovery_rate)
+            
+            print("\nSlot Summary:")
+            print(f"  • Successful Entanglements: {successful_entanglements}")
+            print(f"  • Success Rate: {success_rate:.2f}%")
+            print(f"  • Average Path Reliability: {avg_reliability:.4f}")
+            print(f"  • Recovery Success Rate: {recovery_rate:.2f}%")
+            
             self.deferred_requests = [sd for sd in current_sd if sd not in served_sd]
-        return slot_throughput
+        
+        print("\n" + "="*80)
+        print("Q-PASS SIMULATION COMPLETED")
+        print("="*80)
+        print("Final Statistics:")
+        print(f"  • Average Throughput: {np.mean(slot_throughput):.2f} EPRs/slot")
+        print(f"  • Average Success Rate: {np.mean(success_rates):.2f}%")
+        print(f"  • Average Path Reliability: {np.mean(path_reliabilities):.4f}")
+        print(f"  • Average Recovery Success: {np.mean(recovery_success):.2f}%")
+        print("="*80)
+        
+        return {
+            'throughput': slot_throughput,
+            'success_rate': success_rates,
+            'path_reliability': path_reliabilities,
+            'recovery_success': recovery_success
+        }
 
 class QPASSRSimulator(QuantumNetwork):
     def simulate(self):
@@ -79,37 +144,106 @@ class QCASTSimulator(QuantumNetwork):
         return RecoveryStrategies.xor_based_recovery(self, path, s, d)
 
     def simulate(self):
-        print("\n--- Running Q-CAST Simulation (with XOR-based recovery) ---")
+        print("\n" + "="*80)
+        print("Q-CAST SIMULATION INITIATED")
+        print("="*80)
+        print("Configuration:")
+        print(f"  • Number of Nodes: {self.num_nodes}")
+        print(f"  • Number of Time Slots: {self.num_slots}")
+        print(f"  • Number of Requests per Slot: {self.num_requests}")
+        print(f"  • Link State Range: {self.link_state_range}")
+        print(f"  • Average Node Degree: {self.average_degree}")
+        print(f"  • Target Entanglement Probability: {self.target_Ep}")
+        print(f"  • Quantum Channel Quality (q): {self.q}")
+        print("="*80)
+
         slot_throughput = []
+        success_rates = []
+        path_reliabilities = []
+        recovery_success = []
         self.deferred_requests = []
+        
         for slot in range(self.num_slots):
-            print(f"\n=== Time Slot {slot} (Q-CAST) ===")
+            print(f"\n[Time Slot {slot}] Q-CAST Protocol Execution")
+            print("-"*50)
             self.reset_resources_for_new_slot()
             sd_pairs = self.generate_sd_pairs()
             current_sd = sd_pairs + self.deferred_requests
-            print(f"Current S-D pairs: {current_sd}")
+            print(f"Active Source-Destination Pairs: {len(current_sd)}")
+            print(f"  • New Requests: {len(sd_pairs)}")
+            print(f"  • Deferred Requests: {len(self.deferred_requests)}")
+            
             selected_paths = self.qcast_path_selection(current_sd)
+            print("\nPath Selection Results:")
+            print(f"  • Total Paths Selected: {len(selected_paths)}")
+            
+            successful_entanglements = 0
+            recovery_attempts = 0
+            recovery_successes = 0
+            total_path_reliability = 0
             served = set()
-            successful = 0
+            
             if random.randint(0, 9) == 0:
+                print("\nPerforming Link State Exchange...")
                 self.link_state_exchange()
+            
+            print("\nEntanglement Phase:")
             for sd, path in selected_paths.items():
                 s, d = sd
+                path_reliability = self.calculate_path_reliability(path)
+                total_path_reliability += path_reliability
+                
+                print(f"\nProcessing S-D pair {sd}:")
+                print(f"  • Selected Path: {path}")
+                print(f"  • Path Reliability: {path_reliability:.4f}")
+                
                 if self.attempt_entanglement(path):
-                    print(f"Direct entanglement succeeded for {sd}.")
-                    successful += 1
+                    print(f"  ✓ Direct Entanglement Successful")
+                    successful_entanglements += 1
                     served.add(sd)
                 else:
+                    recovery_attempts += 1
+                    print(f"  × Direct Entanglement Failed")
                     if self.attempt_entanglement_with_recovery(path, s, d):
-                        print(f"XOR-based recovery succeeded for {sd}.")
-                        successful += 1
+                        print(f"  ✓ XOR-based Recovery Successful")
+                        successful_entanglements += 1
+                        recovery_successes += 1
                         served.add(sd)
                     else:
-                        print(f"{sd} failed.")
-            slot_throughput.append(successful)
-            print(f"Time Slot {slot} throughput: {successful}")
+                        print(f"  × Recovery Failed")
+            
+            slot_throughput.append(successful_entanglements)
+            success_rate = len(served) / len(current_sd) * 100
+            success_rates.append(success_rate)
+            avg_reliability = total_path_reliability / len(selected_paths) if selected_paths else 0
+            path_reliabilities.append(avg_reliability)
+            recovery_rate = recovery_successes / recovery_attempts * 100 if recovery_attempts > 0 else 0
+            recovery_success.append(recovery_rate)
+            
+            print("\nSlot Summary:")
+            print(f"  • Successful Entanglements: {successful_entanglements}")
+            print(f"  • Success Rate: {success_rate:.2f}%")
+            print(f"  • Average Path Reliability: {avg_reliability:.4f}")
+            print(f"  • Recovery Success Rate: {recovery_rate:.2f}%")
+            
             self.deferred_requests = [sd for sd in current_sd if sd not in served]
-        return slot_throughput
+        
+        print("\n" + "="*80)
+        print("Q-CAST SIMULATION COMPLETED")
+        print("="*80)
+        print("Final Statistics:")
+        print(f"  • Average Throughput: {np.mean(slot_throughput):.2f} EPRs/slot")
+        print(f"  • Average Success Rate: {np.mean(success_rates):.2f}%")
+        print(f"  • Average Path Reliability: {np.mean(path_reliabilities):.4f}")
+        print(f"  • Average Recovery Success: {np.mean(recovery_success):.2f}%")
+        print("="*80)
+        
+        return {
+            'throughput': slot_throughput,
+            'success_rate': success_rates,
+            'path_reliability': path_reliabilities,
+            'recovery_success': recovery_success
+        }
 
 class QCASTRSimulator(QuantumNetwork):
     def qcast_path_selection(self, sd_pairs):
@@ -251,7 +385,7 @@ class QCASTEnhancedSimulator(QuantumNetwork):
         # Attempt direct entanglement first
         if self.attempt_entanglement(path):
             self.update_entanglement_stats(path, True)
-            return True
+            return True, False  # Success, No recovery needed
 
         # Calculate path characteristics
         metrics = self.calculate_path_metrics(path)
@@ -261,52 +395,163 @@ class QCASTEnhancedSimulator(QuantumNetwork):
             # Try XOR-based recovery for short or reliable paths
             if RecoveryStrategies.xor_based_recovery(self, path, s, d):
                 self.update_entanglement_stats(path, True)
-                return True
+                return True, True  # Success with recovery
         else:
             # Try segmentation for longer paths
             if RecoveryStrategies.segmentation_based_recovery(self, path, s, d):
                 self.update_entanglement_stats(path, True)
-                return True
+                return True, True  # Success with recovery
 
         # If all attempts fail, update statistics and return False
         self.update_entanglement_stats(path, False)
-        return False
+        return False, False  # Failed, No recovery success
 
     def simulate(self):
-        print("\n--- Running Enhanced Q-CAST Simulation ---")
+        print("\n" + "="*80)
+        print("ENHANCED Q-CAST SIMULATION INITIATED")
+        print("="*80)
+        print("Configuration:")
+        print(f"  • Number of Nodes: {self.num_nodes}")
+        print(f"  • Number of Time Slots: {self.num_slots}")
+        print(f"  • Number of Requests per Slot: {self.num_requests}")
+        print(f"  • Link State Range: {self.link_state_range}")
+        print(f"  • Average Node Degree: {self.average_degree}")
+        print(f"  • Target Entanglement Probability: {self.target_Ep}")
+        print(f"  • Quantum Channel Quality (q): {self.q}")
+        print(f"  • Path History Size: {self.max_history_size}")
+        print(f"  • Statistics Age Limit: {self.max_stats_age} slots")
+        print("="*80)
+
         slot_throughput = []
+        success_rates = []
+        path_reliabilities = []
+        recovery_success = []
+        path_lengths = []
         self.deferred_requests = []
 
         for slot in range(self.num_slots):
-            self.current_slot = slot  # Update current slot
-            print(f"\n=== Time Slot {slot} (Enhanced Q-CAST) ===")
+            self.current_slot = slot
+            print(f"\n[Time Slot {slot}] Enhanced Q-CAST Protocol Execution")
+            print("-"*50)
             self.reset_resources_for_new_slot()
             sd_pairs = self.generate_sd_pairs()
             current_sd = sd_pairs + self.deferred_requests
-            print(f"Current S-D pairs: {current_sd}")
-
-            # Phase 2: Enhanced Path Selection
+            print(f"Active Source-Destination Pairs: {len(current_sd)}")
+            print(f"  • New Requests: {len(sd_pairs)}")
+            print(f"  • Deferred Requests: {len(self.deferred_requests)}")
+            
             selected_paths = self.enhanced_path_selection(current_sd)
+            print("\nPath Selection Results:")
+            print(f"  • Total Paths Selected: {len(selected_paths)}")
+            print(f"  • Historical Paths Used: {sum(1 for sd in selected_paths if sd in self.path_history)}")
+            
             served = set()
             successful = 0
+            recovery_attempts = 0
+            recovery_successes = 0
+            total_path_reliability = 0
+            total_path_length = 0
 
-            # Phase 4: Enhanced Entanglement
+            print("\nEntanglement Phase:")
             for sd, path in selected_paths.items():
                 s, d = sd
-                if self.enhanced_entanglement(path, s, d):
-                    print(f"Entanglement succeeded for {sd}")
+                path_reliability = self.calculate_path_reliability(path)
+                total_path_reliability += path_reliability
+                total_path_length += len(path) - 1
+
+                print(f"\nProcessing S-D pair {sd}:")
+                print(f"  • Selected Path: {path}")
+                print(f"  • Path Reliability: {path_reliability:.4f}")
+                print(f"  • Path Length: {len(path)-1} hops")
+
+                success, used_recovery = self.enhanced_entanglement(path, s, d)
+                if success:
+                    print(f"  ✓ Enhanced Entanglement Successful")
                     successful += 1
                     served.add(sd)
-                    # Update path history (limited size)
                     if len(self.path_history) >= self.max_history_size:
-                        # Remove oldest entry
                         self.path_history.pop(next(iter(self.path_history)))
                     self.path_history[sd] = path
+                    if used_recovery:
+                        recovery_attempts += 1
+                        recovery_successes += 1
                 else:
-                    print(f"Entanglement failed for {sd}")
+                    print(f"  × Entanglement Failed")
+                    recovery_attempts += 1
 
             slot_throughput.append(successful)
-            print(f"Time Slot {slot} throughput: {successful}")
+            success_rate = len(served) / len(current_sd) * 100
+            success_rates.append(success_rate)
+            avg_reliability = total_path_reliability / len(selected_paths) if selected_paths else 0
+            path_reliabilities.append(avg_reliability)
+            avg_path_length = total_path_length / len(selected_paths) if selected_paths else 0
+            path_lengths.append(avg_path_length)
+            recovery_rate = recovery_successes / recovery_attempts * 100 if recovery_attempts > 0 else 0
+            recovery_success.append(recovery_rate)
+
+            print("\nSlot Summary:")
+            print(f"  • Successful Entanglements: {successful}")
+            print(f"  • Success Rate: {success_rate:.2f}%")
+            print(f"  • Average Path Reliability: {avg_reliability:.4f}")
+            print(f"  • Average Path Length: {avg_path_length:.2f} hops")
+            print(f"  • Recovery Success Rate: {recovery_rate:.2f}%")
+
             self.deferred_requests = [sd for sd in current_sd if sd not in served]
 
-        return slot_throughput 
+        print("\n" + "="*80)
+        print("ENHANCED Q-CAST SIMULATION COMPLETED")
+        print("="*80)
+        print("Final Statistics:")
+        print(f"  • Average Throughput: {np.mean(slot_throughput):.2f} EPRs/slot")
+        print(f"  • Average Success Rate: {np.mean(success_rates):.2f}%")
+        print(f"  • Average Path Reliability: {np.mean(path_reliabilities):.4f}")
+        print(f"  • Average Path Length: {np.mean(path_lengths):.2f} hops")
+        print(f"  • Average Recovery Success: {np.mean(recovery_success):.2f}%")
+        print("="*80)
+
+        return {
+            'throughput': slot_throughput,
+            'success_rate': success_rates,
+            'path_reliability': path_reliabilities,
+            'recovery_success': recovery_success,
+            'path_length': path_lengths
+        }
+
+    def run_scalability_test(self, node_counts: List[int]) -> Dict[str, List[float]]:
+        """Run scalability tests with different node counts"""
+        print("\n" + "="*80)
+        print("SCALABILITY ANALYSIS INITIATED")
+        print("="*80)
+        print("Testing with node counts:", node_counts)
+        
+        results = {
+            'node_counts': node_counts,
+            'throughput': [],
+            'success_rate': [],
+            'path_length': [],
+            'recovery_overhead': []
+        }
+        
+        for num_nodes in node_counts:
+            print(f"\nTesting with {num_nodes} nodes...")
+            self.num_nodes = num_nodes
+            self.reset_network()
+            
+            metrics = self.simulate()
+            
+            results['throughput'].append(np.mean(metrics['throughput']))
+            results['success_rate'].append(np.mean(metrics['success_rate']))
+            results['path_length'].append(np.mean(metrics['path_length']))
+            results['recovery_overhead'].append(np.mean(metrics['recovery_success']))
+            
+            print(f"Results for {num_nodes} nodes:")
+            print(f"  • Average Throughput: {results['throughput'][-1]:.2f} EPRs/slot")
+            print(f"  • Average Success Rate: {results['success_rate'][-1]:.2f}%")
+            print(f"  • Average Path Length: {results['path_length'][-1]:.2f} hops")
+            print(f"  • Average Recovery Success: {results['recovery_overhead'][-1]:.2f}%")
+        
+        print("\n" + "="*80)
+        print("SCALABILITY ANALYSIS COMPLETED")
+        print("="*80)
+        
+        return results 
