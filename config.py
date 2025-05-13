@@ -7,17 +7,16 @@ class Simulator(Protocol):
     def simulate(self) -> List[float]:
         """Run the simulation and return throughput results"""
         ...
-
 @dataclass
 class SimulationConfig:
     """Configuration for simulation parameters"""
-    num_nodes: int = 500
-    target_Ep: float = 0.7
+    num_nodes: int = 100
+    target_Ep: float = 0.6
     q: float = 0.9
-    link_state_range: int = 10
+    link_state_range: int = 3
     average_degree: int = 5
-    num_requests: int = 25
-    num_slots: int = 10
+    num_requests: int = 10
+    num_slots: int = 50
     num_topologies: int = 3
     use_json_topology: bool = False  # Whether to use JSON topology
     json_file: Optional[str] = None  # Path to JSON topology file

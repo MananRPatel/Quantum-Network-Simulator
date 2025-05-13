@@ -1,11 +1,12 @@
 from dataclasses import dataclass
 from typing import List, Optional, Type, Protocol
 import numpy as np
-import matplotlib.pyplot as plt
-from ext_plotting import plot_EXT_vs_h
+from ext_plotting import (
+    plot_EXT_vs_h,
+    save_and_plot_metrics
+)
 from simulators import QCASTSimulator, QPASSSimulator
-import json
-from config import SimulationConfig, SimulationType, SimulationFactory, SIMULATION_TYPES, DEFAULT_CONFIG, JSON_CONFIG
+from config import SimulationConfig, SimulationType, SimulationFactory, SIMULATION_TYPES, DEFAULT_CONFIG
 
 class Simulator(Protocol):
     """Protocol defining the interface for all simulators"""
@@ -74,82 +75,6 @@ def run_simulation_for_topologies(
         
     return all_throughputs
 
-def plot_cdf(data: List[float], label: str, linewidth: int = 2) -> None:
-    """Helper function to plot CDF for a single dataset"""
-    sorted_data = np.sort(data)
-    cdf = np.arange(1, len(sorted_data) + 1) / len(sorted_data)
-    plt.plot(sorted_data, cdf, linewidth=linewidth, label=label)
-
-def plot_combined_comparison(results: dict[str, List[float]]) -> None:
-    """Plot CDF comparison of different simulation results"""
-    plt.figure(figsize=(10, 6))
-    
-    # Plot each dataset
-    for sim_type, data in results.items():
-        plot_cdf(data, sim_type)
-    
-    plt.title("Aggregated CDF of Throughput (ebits per slot) over 10 Networks")
-    plt.xlabel("Throughput (ebits per slot)")
-    plt.ylabel("CDF")
-    plt.legend()
-    plt.grid(True)
-    plt.show()
-
-def run_simulations(
-    sim_types: List[SimulationType],
-    config: SimulationConfig
-) -> dict[str, List[float]]:
-    """Run all simulations with given configuration"""
-    print(f"\n=== Running {'JSON' if config.use_json_topology else 'Random'} Topology Simulation ===")
-    
-    factory = SimulationFactory(config)
-    results = {}
-    
-    for sim_type in sim_types:
-        results[sim_type.display_name] = run_simulation_for_topologies(
-            sim_type, factory
-        )
-    
-    return results
-
-def save_plot_data_to_json(data: dict[str, List[float]], filename: str = "plot_data.json") -> None:
-    """Save plot data to a JSON file"""
-    plot_data = {}
-    for label, values in data.items():
-        sorted_data = np.sort(values)
-        cdf = np.arange(1, len(sorted_data) + 1) / len(sorted_data)
-        plot_data[label] = {
-            "x": sorted_data.tolist(),
-            "y": cdf.tolist()
-        }
-    
-    with open(filename, 'w') as f:
-        json.dump(plot_data, f, indent=4)
-    print(f"Plot data saved to {filename}")
-
-def load_plot_data_from_json(filename: str = "plot_data.json") -> dict[str, dict]:
-    """Load plot data from a JSON file"""
-    with open(filename, 'r') as f:
-        plot_data = json.load(f)
-    return plot_data
-
-def plot_from_json(filename: str = "plot_data.json", linewidth: int = 2) -> None:
-    """Plot CDF comparison from JSON data"""
-    plot_data = load_plot_data_from_json(filename)
-    
-    plt.figure(figsize=(10, 6))
-    
-    # Plot each dataset
-    for label, data in plot_data.items():
-        plt.plot(data["x"], data["y"], linewidth=linewidth, label=label)
-    
-    plt.title("Aggregated CDF of Throughput (ebits per slot) over 10 Networks")
-    plt.xlabel("Throughput (ebits per slot)")
-    plt.ylabel("CDF")
-    plt.legend()
-    plt.grid(True)
-    plt.show()
-
 if __name__ == "__main__":
     # Plot EXT vs Hop Count
     print("\n=== Plotting EXT vs. Hop Count Graphs ===")
@@ -163,29 +88,6 @@ if __name__ == "__main__":
         simulator = SimulationFactory(DEFAULT_CONFIG).create_simulator(sim_type)
         time_metrics[sim_type.display_name] = simulator.simulate()
     
-    # Plot time-based metrics
-    from metrics_plotting import plot_time_based_metrics
-    plot_time_based_metrics(time_metrics, "time_based_metrics.png")
+    # Save time metrics to JSON and plot
+    save_and_plot_metrics(time_metrics, "time_metrics.json", "time_based_metrics.png")
     
-    # Save and plot CDF of throughput
-    save_plot_data_to_json(time_metrics, "new.json")
-    plot_from_json("new.json")
-    
-    # # Run scalability tests for QCAST-Enhanced
-    # print("\n=== Running Scalability Analysis for QCAST-Enhanced ===")
-    # node_counts = [50, 100, 150, 200, 250, 300]
-    # enhanced_simulator = SimulationFactory(DEFAULT_CONFIG).create_simulator(
-    #     next(sim for sim in SIMULATION_TYPES if sim.name == "QCAST-Enhanced")
-    # )
-    # scalability_metrics = enhanced_simulator.run_scalability_test(node_counts)
-    
-    # # Save and plot scalability metrics
-    # save_plot_data_to_json(scalability_metrics, "scalability_metrics.json")
-    # plot_from_json("scalability_metrics.json")
-    
-    print("\n=== Analysis Complete ===")
-    print("Time-based metrics plots saved to time_based_metrics.png")
-    print("Time-based metrics data saved to time_metrics.json")
-    print("CDF plot of throughput displayed")
-    print("Scalability metrics saved to scalability_metrics.json")
-    print("Scalability metrics plot displayed")
