@@ -126,8 +126,7 @@ config = SimulationConfig(
     link_state_range=3,
     average_degree=6,
     num_requests=10,
-    num_slots=50,
-    num_topologies=3
+    num_slots=50
 )
 
 # Run simulation
@@ -168,7 +167,6 @@ SimulationConfig(
     average_degree=6,     # Average node degree
     num_requests=10,      # Number of connection requests
     num_slots=50,        # Time slots for simulation
-    num_topologies=3     # Number of topologies to simulate
 )
 ```
 

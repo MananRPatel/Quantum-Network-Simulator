@@ -4,7 +4,9 @@ from math import comb
 from typing import Dict, List, Tuple
 import json
 
-def compute_EXT_given_parameters(W, h, p, q):
+# ============= EXT Computation Functions =============
+def compute_EXT_given_parameters(W: int, h: int, p: float, q: float) -> float:
+    """Compute EXT value for given parameters"""
     if h < 1:
         return 0
     P = [[0.0]*(h+1) for _ in range(W+1)]
@@ -19,15 +21,15 @@ def compute_EXT_given_parameters(W, h, p, q):
     EXT_val *= (q ** (h - 1))
     return EXT_val
 
-def plot_EXT_vs_h(p_values=[0.9, 0.6], q=0.9, widths=[1, 2, 3], h_range=range(1, 11)):
+def plot_EXT_vs_h(p_values: List[float] = [0.9, 0.6], 
+                  q: float = 0.9, 
+                  widths: List[int] = [1, 2, 3], 
+                  h_range: range = range(1, 11)) -> None:
     """Plot EXT vs hop count for different parameters"""
     plt.figure(figsize=(10, 6))
     for p in p_values:
         for W in widths:
-            ext_vals = []
-            for h in h_range:
-                ext = compute_EXT_given_parameters(W, h, p, q)
-                ext_vals.append(ext)
+            ext_vals = [compute_EXT_given_parameters(W, h, p, q) for h in h_range]
             label = f"p={p}, W={W}"
             plt.plot(list(h_range), ext_vals, marker='o', linewidth=2, label=label)
             print(f"Computed EXT for p={p}, W={W}: {ext_vals}")
@@ -38,7 +40,9 @@ def plot_EXT_vs_h(p_values=[0.9, 0.6], q=0.9, widths=[1, 2, 3], h_range=range(1,
     plt.legend()
     plt.show()
 
-def plot_time_based_metrics(all_results: Dict[str, Dict[str, List[float]]], save_path: str = "time_based_metrics.png"):
+# ============= Metrics Processing Functions =============
+def plot_time_based_metrics(all_results: Dict[str, Dict[str, List[float]]], 
+                          save_path: str = "time_based_metrics.png") -> None:
     """Plot time-based metrics for all protocols"""
     fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(15, 12))
     
@@ -81,59 +85,40 @@ def plot_time_based_metrics(all_results: Dict[str, Dict[str, List[float]]], save
     plt.savefig(save_path)
     plt.close()
 
+    # Generate CDF plot for throughput
     throughput_data = {name: metrics['throughput'] for name, metrics in all_results.items()}
+    plot_cdf(throughput_data, linewidth=2)
 
-    cdf_throughput(throughput_data, "throughput_cdf.json", True, False, True, 2)
-
-
-
-def cdf_throughput(data: dict[str, List[float]] = None, 
-                    filename: str = "plot_data.json",
-                    save: bool = False,
-                    load: bool = False,
-                    plot: bool = False,
-                    linewidth: int = 2) -> dict[str, dict]:
-    """
-    Unified function to handle plot data operations (save, load, plot)
+# ============= CDF Processing Functions =============
+def plot_cdf(data: Dict[str, List[float]], linewidth: int = 2) -> None:
+    """Plot CDF for the given data"""
+    plot_data = process_cdf_data(data)
     
-    Args:
-        data: Input data dictionary with labels as keys and lists of values
-        filename: JSON file to save/load data from
-        save: Whether to save data to JSON
-        load: Whether to load data from JSON
-        plot: Whether to plot the data
-        linewidth: Line width for plotting
-        
-    Returns:
-        The plot data dictionary
-    """
+    plt.figure(figsize=(10, 6))
+    for label, data in plot_data.items():
+        plt.plot(data["x"], data["y"], linewidth=linewidth, label=label)
+    plt.title("Aggregated CDF of Throughput (ebits per slot) over 10 Networks")
+    plt.xlabel("Throughput (ebits per slot)")
+    plt.ylabel("CDF")
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
+def process_cdf_data(data: Dict[str, List[float]]) -> Dict[str, Dict]:
+    """Process data to generate CDF values"""
     plot_data = {}
-    
-    # Save data if provided and save flag is True
-    if data is not None and save:
-        for label, values in data.items():
-            sorted_data = np.sort(values)
-            cdf = np.arange(1, len(sorted_data) + 1) / len(sorted_data)
-            plot_data[label] = {
-                "x": sorted_data.tolist(),
-                "y": cdf.tolist()
-            }
-    # Plot data if plot flag is True
-    if plot:
-        plt.figure(figsize=(10, 6))
-        for label, data in plot_data.items():
-            plt.plot(data["x"], data["y"], linewidth=linewidth, label=label)
-        plt.title("Aggregated CDF of Throughput (ebits per slot) over 10 Networks")
-        plt.xlabel("Throughput (ebits per slot)")
-        plt.ylabel("CDF")
-        plt.legend()
-        plt.grid(True)
-        plt.show()
-    
+    for label, values in data.items():
+        sorted_data = np.sort(values)
+        cdf = np.arange(1, len(sorted_data) + 1) / len(sorted_data)
+        plot_data[label] = {
+            "x": sorted_data.tolist(),
+            "y": cdf.tolist()
+        }
     return plot_data
 
+# ============= File Operations =============
 def save_metrics_to_json(time_metrics: Dict[str, Dict[str, List[float]]], 
-                        scalability_metrics: Dict[str, List[float]],
+                        scalability_metrics: Dict[str, List[float]] = None,
                         time_file: str = "time_metrics.json",
                         scalability_file: str = "scalability_metrics.json") -> None:
     """Save metrics to JSON files"""
@@ -160,29 +145,14 @@ def load_metrics_from_json(time_file: str = "time_metrics.json",
     
     return time_metrics, scalability_metrics
 
+# ============= Combined Operations =============
 def save_and_plot_metrics(time_metrics: Dict[str, Dict[str, List[float]]], 
                          time_file: str = "time_metrics.json",
                          plot_file: str = "time_based_metrics.png") -> None:
     """Save metrics to JSON and immediately plot them"""
-    # Save metrics to JSON
     save_metrics_to_json(time_metrics, None, time_file)
     print(f"Time metrics saved to {time_file}")
     
-    # Load metrics and plot
     loaded_metrics, _ = load_metrics_from_json(time_file)
     plot_time_based_metrics(loaded_metrics, plot_file)
-    print(f"Plot saved to {plot_file}")
-
-def save_plot_data_to_json(data: dict[str, List[float]], filename: str = "plot_data.json") -> None:
-    """Save plot data to JSON file"""
-    plot_data = {}
-    for label, values in data.items():
-        sorted_data = np.sort(values)
-        cdf = np.arange(1, len(sorted_data) + 1) / len(sorted_data)
-        plot_data[label] = {
-            "x": sorted_data.tolist(),
-            "y": cdf.tolist()
-        }
-    with open(filename, 'w') as f:
-        json.dump(plot_data, f, indent=4)
-    print(f"Plot data saved to {filename}") 
+    print(f"Plot saved to {plot_file}") 

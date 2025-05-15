@@ -4,7 +4,6 @@ import random
 import time
 from math import comb, sqrt, inf
 from networkx.algorithms.simple_paths import shortest_simple_paths
-from waxman_graph import generate_waxman_graph
 from topology import Topology
 from typing import List
 

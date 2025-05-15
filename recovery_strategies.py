@@ -1,4 +1,5 @@
 import random
+import networkx
 
 class RecoveryStrategies:
     @staticmethod

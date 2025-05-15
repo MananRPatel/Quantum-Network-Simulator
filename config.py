@@ -14,10 +14,9 @@ class SimulationConfig:
     target_Ep: float = 0.6
     q: float = 0.9
     link_state_range: int = 3
-    average_degree: int = 5
+    average_degree: int = 6
     num_requests: int = 10
     num_slots: int = 50
-    num_topologies: int = 3
     use_json_topology: bool = False  # Whether to use JSON topology
     json_file: Optional[str] = None  # Path to JSON topology file
 
@@ -31,7 +30,6 @@ class SimulationConfig:
             "average_degree": self.average_degree,
             "num_requests": self.num_requests,
             "num_slots": self.num_slots,
-            "num_topologies": self.num_topologies,
             "use_json_topology": self.use_json_topology,
             "json_file": self.json_file
         }

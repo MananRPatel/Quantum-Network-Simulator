@@ -2,14 +2,16 @@ import random
 from quantum_network import QuantumNetwork
 from path_selection import PathSelection
 from recovery_strategies import RecoveryStrategies
-from typing import List, Dict
+from typing import List, Dict, Tuple
 import numpy as np
 
 class QPASSSimulator(QuantumNetwork):
-    def attempt_entanglement_with_recovery(self, path, s, d):
+    def attempt_entanglement_with_recovery(self, path: List[int], s: int, d: int) -> bool:
+        """Attempt entanglement with segmentation-based recovery"""
         return RecoveryStrategies.segmentation_based_recovery(self, path, s, d)
 
-    def simulate(self):
+    def simulate(self) -> Dict[str, List[float]]:
+        """Run Q-PASS simulation"""
         print("\n" + "="*80)
         print("Q-PASS SIMULATION INITIATED")
         print("="*80)
@@ -108,7 +110,8 @@ class QPASSSimulator(QuantumNetwork):
         }
 
 class QPASSRSimulator(QuantumNetwork):
-    def simulate(self):
+    def simulate(self) -> Dict[str, List[float]]:
+        """Run Q-PASS/R simulation (recovery-free)"""
         print("\n--- Running Q-PASS/R Simulation (recovery-free) ---")
         slot_throughput = []
         self.deferred_requests = []
@@ -134,16 +137,15 @@ class QPASSRSimulator(QuantumNetwork):
             slot_throughput.append(successful_entanglements)
             print(f"Time Slot {slot} throughput: {successful_entanglements}")
             self.deferred_requests = [sd for sd in current_sd if sd not in served_sd]
-        return slot_throughput
+        return {'throughput': slot_throughput}
 
 class QCASTSimulator(QuantumNetwork):
-    def qcast_path_selection(self, sd_pairs):
-        return PathSelection.qcast_path_selection(self, sd_pairs)
-
-    def attempt_entanglement_with_recovery(self, path, s, d):
+    def attempt_entanglement_with_recovery(self, path: List[int], s: int, d: int) -> bool:
+        """Attempt entanglement with XOR-based recovery"""
         return RecoveryStrategies.xor_based_recovery(self, path, s, d)
 
-    def simulate(self):
+    def simulate(self) -> Dict[str, List[float]]:
+        """Run Q-CAST simulation"""
         print("\n" + "="*80)
         print("Q-CAST SIMULATION INITIATED")
         print("="*80)
@@ -173,7 +175,7 @@ class QCASTSimulator(QuantumNetwork):
             print(f"  • New Requests: {len(sd_pairs)}")
             print(f"  • Deferred Requests: {len(self.deferred_requests)}")
             
-            selected_paths = self.qcast_path_selection(current_sd)
+            selected_paths = PathSelection.qcast_path_selection(self, current_sd)
             print("\nPath Selection Results:")
             print(f"  • Total Paths Selected: {len(selected_paths)}")
             
@@ -246,10 +248,8 @@ class QCASTSimulator(QuantumNetwork):
         }
 
 class QCASTRSimulator(QuantumNetwork):
-    def qcast_path_selection(self, sd_pairs):
-        return PathSelection.qcast_path_selection(self, sd_pairs)
-
-    def simulate(self):
+    def simulate(self) -> Dict[str, List[float]]:
+        """Run Q-CAST/R simulation (recovery-free)"""
         print("\n--- Running Q-CAST/R Simulation (recovery-free) ---")
         slot_throughput = []
         self.deferred_requests = []
@@ -259,7 +259,7 @@ class QCASTRSimulator(QuantumNetwork):
             sd_pairs = self.generate_sd_pairs()
             current_sd = sd_pairs + self.deferred_requests
             print(f"Current S-D pairs: {current_sd}")
-            selected_paths = self.qcast_path_selection(current_sd)
+            selected_paths = PathSelection.qcast_path_selection(self, current_sd)
             served = set()
             successful = 0
             if random.randint(0, 9) == 0:
@@ -274,7 +274,7 @@ class QCASTRSimulator(QuantumNetwork):
             slot_throughput.append(successful)
             print(f"Time Slot {slot} throughput: {successful}")
             self.deferred_requests = [sd for sd in current_sd if sd not in served]
-        return slot_throughput
+        return {'throughput': slot_throughput}
 
 class QCASTEnhancedSimulator(QuantumNetwork):
     def __init__(self, *args, **kwargs):
@@ -285,7 +285,7 @@ class QCASTEnhancedSimulator(QuantumNetwork):
         self.max_stats_age = 100  # Maximum age of statistics in slots
         self.current_slot = 0  # Track current slot for age management
 
-    def update_entanglement_stats(self, path, success):
+    def update_entanglement_stats(self, path: List[int], success: bool) -> None:
         """Update entanglement success statistics for path segments with cleanup"""
         # Cleanup old statistics based on age
         current_time = self.current_slot
@@ -316,7 +316,7 @@ class QCASTEnhancedSimulator(QuantumNetwork):
                 self.entanglement_stats[segment]['success'] += 1
             self.entanglement_stats[segment]['last_updated'] = current_time
 
-    def get_segment_reliability(self, segment):
+    def get_segment_reliability(self, segment: Tuple[int, int]) -> float:
         """Calculate reliability score for a path segment"""
         if segment in self.entanglement_stats:
             stats = self.entanglement_stats[segment]
@@ -324,7 +324,7 @@ class QCASTEnhancedSimulator(QuantumNetwork):
                 return stats['success'] / stats['total']
         return 0.5  # Default reliability for unknown segments
 
-    def calculate_path_metrics(self, path):
+    def calculate_path_metrics(self, path: List[int]) -> Dict[str, float]:
         """Calculate essential path metrics for selection"""
         # Basic metrics
         length = len(path) - 1
@@ -341,7 +341,7 @@ class QCASTEnhancedSimulator(QuantumNetwork):
             'reliability': reliability
         }
 
-    def enhanced_path_selection(self, sd_pairs):
+    def enhanced_path_selection(self, sd_pairs: List[Tuple[int, int]]) -> Dict[Tuple[int, int], List[int]]:
         """Enhanced Phase 2: Path Selection with essential metrics"""
         print("Starting Enhanced Q-CAST path selection (Phase 2)")
         selected_paths = {}
@@ -380,7 +380,7 @@ class QCASTEnhancedSimulator(QuantumNetwork):
 
         return selected_paths
 
-    def enhanced_entanglement(self, path, s, d):
+    def enhanced_entanglement(self, path: List[int], s: int, d: int) -> Tuple[bool, bool]:
         """Enhanced Phase 4: Entanglement with smart recovery strategy"""
         # Attempt direct entanglement first
         if self.attempt_entanglement(path):
@@ -406,7 +406,8 @@ class QCASTEnhancedSimulator(QuantumNetwork):
         self.update_entanglement_stats(path, False)
         return False, False  # Failed, No recovery success
 
-    def simulate(self):
+    def simulate(self) -> Dict[str, List[float]]:
+        """Run Enhanced Q-CAST simulation"""
         print("\n" + "="*80)
         print("ENHANCED Q-CAST SIMULATION INITIATED")
         print("="*80)

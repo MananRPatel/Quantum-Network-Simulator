@@ -377,11 +377,6 @@ Configuration data class for simulation parameters.
   - Range: 1 to infinity
   - Default: 1000
 
-- `num_topologies` (int):
-  - Number of topologies to test
-  - Range: 1 to infinity
-  - Default: 5
-
 - `use_json_topology` (bool):
   - Whether to use JSON topology
   - Default: False

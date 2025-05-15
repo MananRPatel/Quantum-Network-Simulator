@@ -2,11 +2,25 @@ import numpy as np
 import networkx as nx
 import random
 from math import sqrt
-from waxman_graph import generate_waxman_graph
 from datetime import datetime
 import json
 
 class Topology:
+    @staticmethod
+    def generate_waxman_graph(n: int, beta: float, alpha: float, positions: dict) -> nx.Graph:
+        """Generate a Waxman graph with given parameters"""
+        G = nx.Graph()
+        G.add_nodes_from(range(n))
+        L = max(sqrt((positions[u][0]-positions[v][0])**2 + (positions[u][1]-positions[v][1])**2)
+                for u in range(n) for v in range(u+1, n))
+        for u in range(n):
+            for v in range(u+1, n):
+                d = sqrt((positions[u][0]-positions[v][0])**2 + (positions[u][1]-positions[v][1])**2)
+                p_edge = beta * np.exp(-d / (alpha * L))
+                if random.random() < p_edge:
+                    G.add_edge(u, v)
+        return G
+
     @staticmethod
     def initialize_topology(num_nodes, average_degree, json_file=None):
         if json_file:
@@ -25,7 +39,7 @@ class Topology:
         best_G = None
         for _ in range(20):
             alpha_mid = (a_low + a_high) / 2.0
-            G_mid = generate_waxman_graph(num_nodes, beta=0.6, alpha=alpha_mid, positions=positions)
+            G_mid = Topology.generate_waxman_graph(num_nodes, beta=0.6, alpha=alpha_mid, positions=positions)
             avg_deg = 2 * G_mid.number_of_edges() / num_nodes
             if abs(avg_deg - average_degree) < 0.5:
                 best_G = G_mid
