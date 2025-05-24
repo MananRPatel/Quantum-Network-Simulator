@@ -1,0 +1,135 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{listings}
+\usepackage{xcolor}
+
+\title{Extending the Quantum Network Class: A Comprehensive Guide}
+\author{Quantum Network Protocol Team}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section{Introduction}
+This document provides a comprehensive guide for extending the Quantum Network class for new users. The base class implements core quantum network functionality and serves as the foundation for all quantum network simulations.
+
+\section{Base Class Structure}
+The \texttt{QuantumNetwork} class provides essential network operations and metrics calculations. Here are the key components:
+
+\subsection{Core Parameters}
+\begin{itemize}
+    \item \texttt{num\_nodes}: Number of nodes in the network (default: 100)
+    \item \texttt{num\_slots}: Number of time slots for simulation (default: 1000)
+    \item \texttt{num\_requests}: Number of requests per time slot (default: 10)
+    \item \texttt{link\_state\_range}: Range for link state information exchange (default: 3)
+    \item \texttt{routing\_metric}: Metric used for path selection ("EXT", "SumDist", "CR", "BotCap")
+    \item \texttt{average\_degree}: Average node degree in the network (default: 6)
+    \item \texttt{target\_Ep}: Target entanglement probability (default: 0.6)
+    \item \texttt{q}: Quantum channel quality parameter (default: 0.9)
+\end{itemize}
+
+\section{Extending the Class}
+To extend the Quantum Network class for new users, follow these steps:
+
+\subsection{1. Create a New Simulator Class}
+\begin{lstlisting}[language=Python]
+from quantum_network import QuantumNetwork
+
+class NewQuantumSimulator(QuantumNetwork):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Add your custom initialization here
+\end{lstlisting}
+
+\subsection{2. Implement Required Methods}
+The following methods should be implemented in your new class:
+
+\begin{itemize}
+    \item \texttt{attempt\_entanglement\_with\_recovery}: Define your recovery strategy
+    \item \texttt{simulate}: Implement your simulation logic
+\end{itemize}
+
+\subsection{3. Example Implementation}
+Here's an example of how to implement a basic simulator:
+
+\begin{lstlisting}[language=Python]
+class NewQuantumSimulator(QuantumNetwork):
+    def attempt_entanglement_with_recovery(self, path, s, d):
+        # Implement your recovery strategy
+        return self.your_recovery_method(path, s, d)
+    
+    def simulate(self):
+        # Initialize metrics
+        slot_throughput = []
+        success_rates = []
+        
+        # Run simulation for each time slot
+        for slot in range(self.num_slots):
+            # Your simulation logic here
+            pass
+            
+        return {
+            'throughput': slot_throughput,
+            'success_rate': success_rates
+        }
+\end{lstlisting}
+
+\section{Key Features to Consider}
+When extending the class, consider implementing these features:
+
+\subsection{1. Path Selection}
+\begin{itemize}
+    \item Implement custom path selection algorithms
+    \item Consider network topology and constraints
+    \item Handle resource allocation
+\end{itemize}
+
+\subsection{2. Recovery Strategies}
+\begin{itemize}
+    \item Implement error recovery mechanisms
+    \item Handle entanglement failures
+    \item Manage resource reallocation
+\end{itemize}
+
+\subsection{3. Performance Metrics}
+Track and return these metrics:
+\begin{itemize}
+    \item Throughput
+    \item Success rate
+    \item Path reliability
+    \item Recovery success rate
+\end{itemize}
+
+\section{Best Practices}
+\begin{enumerate}
+    \item Always call the parent class constructor using \texttt{super()}
+    \item Implement proper error handling
+    \item Document your code thoroughly
+    \item Test your implementation with various network sizes
+    \item Validate results against known benchmarks
+\end{enumerate}
+
+\section{Example Usage}
+\begin{lstlisting}[language=Python]
+# Create a new simulator instance
+simulator = NewQuantumSimulator(
+    num_nodes=100,
+    num_slots=1000,
+    num_requests=10,
+    routing_metric="EXT"
+)
+
+# Run simulation
+results = simulator.simulate()
+
+# Access results
+throughput = results['throughput']
+success_rate = results['success_rate']
+\end{lstlisting}
+
+\section{Conclusion}
+Extending the Quantum Network class provides a flexible framework for implementing new quantum network protocols. By following this guide and implementing the required methods, you can create custom quantum network simulators that suit your specific needs.
+
+\end{document} 

@@ -536,7 +536,8 @@ class QCASTEnhancedSimulator(QuantumNetwork):
         for num_nodes in node_counts:
             print(f"\nTesting with {num_nodes} nodes...")
             self.num_nodes = num_nodes
-            self.reset_network()
+            self.reset_entanglements()
+            self.reset_resources_for_new_slot()
             
             metrics = self.simulate()
             
