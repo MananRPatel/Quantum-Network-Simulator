@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import List, Optional, Type, Protocol
-from simulators import QCASTSimulator, QPASSSimulator, QCASTEnhancedSimulator
+from simulators import QCASTSimulator, QPASSSimulator, QCASTEnhancedSimulator,QCASTPipeLineSimulator
 
 class Simulator(Protocol):
     """Protocol defining the interface for all simulators"""
@@ -10,13 +10,13 @@ class Simulator(Protocol):
 @dataclass
 class SimulationConfig:
     """Configuration for simulation parameters"""
-    num_nodes: int = 100
+    num_nodes: int = 1000
     target_Ep: float = 0.6
     q: float = 0.9
     link_state_range: int = 2
-    average_degree: int = 6
-    num_requests: int = 50
-    num_slots: int = 100
+    average_degree: int = 5
+    num_requests: int = 500
+    num_slots: int = 50
     use_json_topology: bool = False  # Whether to use JSON topology
     json_file: Optional[str] = None  # Path to JSON topology file
 
@@ -72,32 +72,37 @@ SIMULATION_TYPES = [
         name="QCAST",
         simulator_class=QCASTSimulator,
         routing_metric="EXT",
-        display_name="Q-CAST (EXT)"
+        display_name="Q-CAST"
     ),
     SimulationType(
-        name="QCAST_ENHANCED",
-        simulator_class=QCASTEnhancedSimulator,
+        name="QCAST-PIPELINE",
+        simulator_class=QCASTPipeLineSimulator,
         routing_metric="EXT",
-        display_name="Q-CAST (Enhanced)"
-    ),
-    SimulationType(
-        name="QPASS_CR",
-        simulator_class=QPASSSimulator,
-        routing_metric="CR",
-        display_name="Q-PASS (CR)"
-    ),
-    SimulationType(
-        name="QPASS_SumDist",
-        simulator_class=QPASSSimulator,
-        routing_metric="SumDist",
-        display_name="Q-PASS (SumDist)"
-    ),
-    SimulationType(
-        name="QPASS_BotCap",
-        simulator_class=QPASSSimulator,
-        routing_metric="BotCap",
-        display_name="Q-PASS (BotCap)"
-    )
+        display_name="Q-CAST-PIPELINE"
+    ) #,
+    # SimulationType(
+    #     name="QCAST_ENHANCED",
+    #     simulator_class=QCASTEnhancedSimulator,
+    #     routing_metric="EXT",
+    #     display_name="Q-CAST (Enhanced)"
+    # ),
+    # SimulationType(
+    #     name="QPASS_CR",
+    #     simulator_class=QPASSSimulator,
+    #     routing_metric="CR",
+    #     display_name="Q-PASS (CR)"
+    # ),
+    # SimulationType(
+    #     name="QPASS_SumDist",
+    #     simulator_class=QPASSSimulator,
+    #     routing_metric="SumDist",
+    #     display_name="Q-PASS (SumDist)"
+    # ),
+    # SimulationType(
+    #     name="QPASS_BotCap",
+    #     simulator_class=QPASSSimulator,
+    #     routing_metric="BotCap",
+    #     display_name="Q-PASS (BotCap)"
 ]
 
 # Default configuration for random topology

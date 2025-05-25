@@ -41,9 +41,55 @@ def plot_EXT_vs_h(p_values: List[float] = [0.9, 0.6],
     plt.show()
 
 # ============= Metrics Processing Functions =============
+def plot_slot_waiting_time_comparison(qcast_results: Dict[str, List[float]], 
+                                    qcast_pipeline_results: Dict[str, List[float]],
+                                    save_path: str = "slot_waiting_time_comparison.png") -> None:
+    """Plot comparison of slot waiting times between QCAST and QCASTPipeline"""
+    plt.figure(figsize=(12, 6))
+    
+    # Get waiting times for both protocols and sort them
+    qcast_waiting_times = sorted(qcast_results['waiting_times'])
+    pipeline_waiting_times = sorted(qcast_pipeline_results['waiting_times'])
+    
+    # Create time points for x-axis
+    time_points = range(len(qcast_waiting_times))
+    
+    # Plot lines for both protocols
+    plt.plot(time_points, qcast_waiting_times, 'b-', label='QCAST', linewidth=2)
+    plt.plot(time_points, pipeline_waiting_times, 'g-', label='QCAST-PIPELINE', linewidth=2)
+    
+    plt.title('Sorted Slot Waiting Time Comparison (SD Creation to Path Selection)')
+    plt.xlabel('Time Slot Index')
+    plt.ylabel('Waiting Time (seconds)')
+    plt.grid(True, alpha=0.3)
+    plt.legend()
+    
+    # Add statistics text
+    stats_text = "Waiting Time Statistics:\n"
+    stats_text += f"\nQCAST:\n"
+    stats_text += f"Min: {min(qcast_waiting_times):.3f}s\n"
+    stats_text += f"Median: {np.median(qcast_waiting_times):.3f}s\n"
+    stats_text += f"Max: {max(qcast_waiting_times):.3f}s\n"
+    stats_text += f"Mean: {np.mean(qcast_waiting_times):.3f}s\n"
+    
+    stats_text += f"\nQCAST-PIPELINE:\n"
+    stats_text += f"Min: {min(pipeline_waiting_times):.3f}s\n"
+    stats_text += f"Median: {np.median(pipeline_waiting_times):.3f}s\n"
+    stats_text += f"Max: {max(pipeline_waiting_times):.3f}s\n"
+    stats_text += f"Mean: {np.mean(pipeline_waiting_times):.3f}s"
+    
+    plt.text(0.02, 0.98, stats_text,
+             transform=plt.gca().transAxes,
+             verticalalignment='top',
+             bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
+    
+    plt.tight_layout()
+    plt.savefig(save_path)
+    plt.close()
+
 def plot_time_based_metrics(all_results: Dict[str, Dict[str, List[float]]], 
                           save_path: str = "time_based_metrics.png") -> None:
-    """Plot time-based metrics for all protocols"""
+    """Plot metrics for all protocols"""
     fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(15, 12))
     
     # Plot 1: End-to-End Throughput
@@ -88,6 +134,16 @@ def plot_time_based_metrics(all_results: Dict[str, Dict[str, List[float]]],
     # Generate CDF plot for throughput
     throughput_data = {name: metrics['throughput'] for name, metrics in all_results.items()}
     plot_cdf(throughput_data, linewidth=2)
+
+
+    print(all_results)
+
+    # Generate waiting time comparison if both QCAST and QCASTPipeline results are available
+    if 'Q-CAST' in all_results and 'Q-CAST-PIPELINE' in all_results:
+        plot_slot_waiting_time_comparison(
+            all_results['Q-CAST'],
+            all_results['Q-CAST-PIPELINE']
+        )
 
 # ============= CDF Processing Functions =============
 def plot_cdf(data: Dict[str, List[float]], linewidth: int = 2) -> None:

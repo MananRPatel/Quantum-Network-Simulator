@@ -13,12 +13,18 @@ class Topology:
         G.add_nodes_from(range(n))
         L = max(sqrt((positions[u][0]-positions[v][0])**2 + (positions[u][1]-positions[v][1])**2)
                 for u in range(n) for v in range(u+1, n))
+        
+        # Calculate target number of edges based on desired average degree
+        target_edges = int(n * (n-1) / 2 * 0.1)  # Start with 10% of possible edges
+        
+        # Generate edges with probability based on distance
         for u in range(n):
             for v in range(u+1, n):
                 d = sqrt((positions[u][0]-positions[v][0])**2 + (positions[u][1]-positions[v][1])**2)
                 p_edge = beta * np.exp(-d / (alpha * L))
                 if random.random() < p_edge:
                     G.add_edge(u, v)
+                    
         return G
 
     @staticmethod
@@ -35,22 +41,65 @@ class Topology:
                 if all(sqrt((pos[0]-positions[other][0])**2 + (pos[1]-positions[other][1])**2) >= d_min for other in positions):
                     positions[node] = pos
                     break
-        a_low, a_high = 0.1, 10.0
+
+        # Calculate target number of edges based on average degree
+        target_edges = int(num_nodes * average_degree / 2)
+        
+        # Try a few alpha values to get close to target degree
         best_G = None
-        for _ in range(20):
-            alpha_mid = (a_low + a_high) / 2.0
-            G_mid = Topology.generate_waxman_graph(num_nodes, beta=0.6, alpha=alpha_mid, positions=positions)
-            avg_deg = 2 * G_mid.number_of_edges() / num_nodes
-            if abs(avg_deg - average_degree) < 0.5:
-                best_G = G_mid
+        best_diff = float('inf')
+        
+        for alpha in [0.2, 0.4, 0.6, 0.8, 1.0]:
+            G = Topology.generate_waxman_graph(num_nodes, beta=0.6, alpha=alpha, positions=positions)
+            
+            # If graph is disconnected, connect it
+            if not nx.is_connected(G):
+                components = list(nx.connected_components(G))
+                while len(components) > 1:
+                    # Connect two closest components
+                    min_dist = float('inf')
+                    edge_to_add = None
+                    for i in range(len(components)):
+                        for j in range(i+1, len(components)):
+                            for u in components[i]:
+                                for v in components[j]:
+                                    d = sqrt((positions[u][0]-positions[v][0])**2 + (positions[u][1]-positions[v][1])**2)
+                                    if d < min_dist:
+                                        min_dist = d
+                                        edge_to_add = (u, v)
+                    if edge_to_add:
+                        G.add_edge(*edge_to_add)
+                    components = list(nx.connected_components(G))
+            
+            current_avg_deg = 2 * G.number_of_edges() / num_nodes
+            
+            # Update best graph if this one is better
+            if abs(current_avg_deg - average_degree) < best_diff:
+                best_diff = abs(current_avg_deg - average_degree)
+                best_G = G.copy()
+            
+            # If we're close enough to target, break
+            if abs(current_avg_deg - average_degree) < 0.5:
                 break
-            if avg_deg < average_degree:
-                a_low = alpha_mid
-            else:
-                a_high = alpha_mid
-            best_G = G_mid
+        
+        # Quick adjustment of edges if needed
+        if best_G:
+            current_edges = best_G.number_of_edges()
+            if current_edges < target_edges:
+                # Add some random edges
+                possible_edges = [(u, v) for u in range(num_nodes) for v in range(u+1, num_nodes) 
+                                if not best_G.has_edge(u, v)]
+                random.shuffle(possible_edges)
+                for u, v in possible_edges[:min(len(possible_edges), target_edges - current_edges)]:
+                    best_G.add_edge(u, v)
+            elif current_edges > target_edges:
+                # Remove some random edges
+                edges_to_remove = random.sample(list(best_G.edges()), min(len(best_G.edges()), current_edges - target_edges))
+                best_G.remove_edges_from(edges_to_remove)
+        
         for node in best_G.nodes():
             best_G.nodes[node]['pos'] = positions[node]
+            
         print(f"Generated topology: {num_nodes} nodes, {best_G.number_of_edges()} edges, average degree ≈ {2*best_G.number_of_edges()/num_nodes:.2f}")
         
         # Store topology in file
