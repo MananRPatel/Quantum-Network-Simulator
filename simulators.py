@@ -195,7 +195,7 @@ class QCASTSimulator(QuantumNetwork):
     async def process_slot(self, slot: int) -> Dict[str, List[float]]:
         """Process a single time slot with concurrency and global lock mechanism"""
         # Initialize slot with random sleep
-        sleep_time = random.uniform(1, self.num_slots * 10)
+        sleep_time = random.uniform(1, self.num_slots / 10)
         print(f"\n[Time Slot {slot}] Starting with sleep time: {sleep_time:.2f} seconds")
         
         # Record sleep times
@@ -204,14 +204,12 @@ class QCASTSimulator(QuantumNetwork):
         sleep_completion = time.time()
         self.sleep_completion_times[slot] = sleep_completion
         
-        # Wait for turn based on sleep completion
-        await self._wait_for_turn(slot)
         
         try:
             # Initialize slot resources and generate requests
             self.reset_resources_for_new_slot()
             sd_pairs = self.generate_sd_pairs()
-            current_sd = sd_pairs + self.deferred_requests
+            current_sd = sd_pairs # + self.deferred_requests
 
             # Record creation time for SD pairs
             sd_creation_time = time.time()
@@ -386,7 +384,7 @@ class QCASTPipeLineSimulator(QuantumNetwork):
     async def process_slot(self, slot: int) -> Dict[str, List[float]]:
         """Process a single time slot with concurrency and global lock mechanism"""
         # Initialize slot with random sleep
-        sleep_time = random.uniform(1, self.num_slots * 10)
+        sleep_time = random.uniform(1, self.num_slots / 10)
         print(f"\n[Time Slot {slot}] Starting with sleep time: {sleep_time:.2f} seconds")
         
         # Record sleep times
@@ -395,14 +393,11 @@ class QCASTPipeLineSimulator(QuantumNetwork):
         sleep_completion = time.time()
         self.sleep_completion_times[slot] = sleep_completion
         
-        # Wait for turn based on sleep completion
-        await self._wait_for_turn(slot)
-        
         try:
             # Initialize slot resources and generate requests
             self.reset_resources_for_new_slot()
             sd_pairs = self.generate_sd_pairs()
-            current_sd = sd_pairs + self.deferred_requests
+            current_sd = sd_pairs # + self.deferred_requests
 
             # Record creation time for SD pairs
             sd_creation_time = time.time()

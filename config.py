@@ -10,13 +10,13 @@ class Simulator(Protocol):
 @dataclass
 class SimulationConfig:
     """Configuration for simulation parameters"""
-    num_nodes: int = 1000
+    num_nodes: int = 500
     target_Ep: float = 0.6
     q: float = 0.9
     link_state_range: int = 2
     average_degree: int = 5
-    num_requests: int = 500
-    num_slots: int = 50
+    num_requests: int = 50
+    num_slots: int = 5000
     use_json_topology: bool = False  # Whether to use JSON topology
     json_file: Optional[str] = None  # Path to JSON topology file
 
