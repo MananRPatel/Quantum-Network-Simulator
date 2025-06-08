@@ -5,7 +5,6 @@ A framework for simulating quantum network protocols including Q-CAST and Q-PASS
 ## Installation
 
 ```bash
-git clone git@github.com:quantum-qphase-developers/QPhase.git
 pip install numpy networkx matplotlib
 ```
 
